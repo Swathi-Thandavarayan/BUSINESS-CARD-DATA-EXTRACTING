@@ -1,27 +1,44 @@
-import easyocr
 import streamlit as st
-from dash import Dash, html, dcc, callback, Output, Input          
+import easyocr
+import cv2
+import numpy as np
+from PIL import Image
 
-reader = easyocr.Reader(['en'])  
-image_path = '1.png'
-result = reader.readtext(image_path)
-for detection in result:
-    st.write(detection[1]) 
-
-st.write('detection')
-
-
-uploaded_files = st.file_uploader(
-    "Choose a file", accept_multiple_files=True
-)
-for uploaded_file in uploaded_files:
-    bytes_data = uploaded_file.read()
-    st.write("filename:", uploaded_file.name)
-    st.write(bytes_data)
-
-    if uploaded_file is not None:
-    # Open the image using PIL
-    image = Image.open(uploaded_file)
+# Image processing function
+def preprocess_image(image):
+    # Convert PIL image to OpenCV format (numpy array)
+    open_cv_image = np.array(image)
+    # Convert RGB to BGR (as OpenCV uses BGR by default)
+    open_cv_image = cv2.cvtColor(open_cv_image, cv2.COLOR_RGB2BGR)
+    # Resize the image to improve OCR readability
+    open_cv_image = cv2.resize(open_cv_image, None, fx=2, fy=2, interpolation=cv2.INTER_CUBIC)
+    # Convert the image to grayscale
+    gray_image = cv2.cvtColor(open_cv_image, cv2.COLOR_BGR2GRAY)
+    # Apply thresholding (binarization)
+    _, thresh_image = cv2.threshold(gray_image, 150, 255, cv2.THRESH_BINARY)
     
-    # Display the image
+    return thresh_image
+
+# File uploader for image
+uploaded_file = st.file_uploader("Choose an image...", type=["jpg", "jpeg", "png"])
+
+# Check if an image is uploaded
+if uploaded_file is not None:
+    # Open the uploaded image
+    image = Image.open(uploaded_file)
+    # Display the uploaded image
     st.image(image, caption="Uploaded Image", use_column_width=True)
+    # Preprocess the image
+    preprocessed_image = preprocess_image(image)
+    # Save preprocessed image to a temporary file
+    cv2.imwrite("temp_preprocessed_image.png", preprocessed_image)
+    # Initialize the easyocr reader
+    reader = easyocr.Reader(['en'])
+    # Perform OCR on the preprocessed image
+    result = reader.readtext("temp_preprocessed_image.png")
+    # Display OCR results
+    st.write("OCR Results:")
+    for detection in result:
+        st.write(detection[1])  # Display detected text
+
+    st.write('Detection completed.')
