@@ -1,5 +1,19 @@
-streamlit part
-sdfsdfdf
-dsfsddddd
-dsfsdfd
-sdfdfvefv
+import streamlit as st
+import easyocr
+import cv2
+import numpy as np
+from PIL import Image
+import pandas as pd
+import re
+import mysql.connector
+
+
+#MYSQL CONNECTION
+config = {"user":"root",
+          "password":"1234",
+          "host":"127.0.0.1",
+          "database":"Buiseness_card"}
+
+connection = mysql.connector.connect(**config)
+cursor = connection.cursor()
+
